@@ -1,4 +1,2 @@
-data/raw/
-test/
-*.jsonl
-*.csv
+**/*.jsonl
+**/*.csv
