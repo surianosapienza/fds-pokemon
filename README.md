@@ -11,3 +11,5 @@ numero di volte che è stato cambiato pokemon FATTO
 guarda ogni stato singolarmente 
 inserisci category e il count dei diversi tipi FATTO
 stessa cosa con gli stati come scritto appena su
+
+sistemare iperparametri 
