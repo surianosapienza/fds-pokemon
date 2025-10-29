@@ -9,3 +9,5 @@ numero di pokemon morti di p2
 numero di pokemon morti di p1
 numero di volte che è stato cambiato pokemon
 guarda ogni stato singolarmente
+inserisci category e il count dei diversi tipi
+stessa cosa con gli stati come scritto appena su
