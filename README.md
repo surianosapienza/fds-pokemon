@@ -26,3 +26,10 @@ guardare bene il kfold e dirgli di fare accuracy solo sulla vali!!!!
 ANGELO 
 commentare le celle dei notebook: 01_preprocessing.ipynb e 03_modeling.ipynb
 provare a pensare a nuove feature da inserire (regola rasoio di occam) e aggiungerle alle task di EDO
+
+
+
+
+
+COSE DA FARE PRIMA DI RUNNARE
+se cambi il dataset ricordati di trovare il migliore c possibile
