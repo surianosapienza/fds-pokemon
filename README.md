@@ -15,13 +15,15 @@ inserisci category e il count dei diversi tipi FATTO
 stessa cosa con gli stati come scritto appena su
 media delle medie delle stat del team
 somma delle priority
+bisogna guardare meglio le feature del singolo pokemon per tunare meglio -> sentiamoci
+
 
 FRA
 sistemare iperparametri 
-modificare il modelling mettendo mean+-stdev nei kfold
+modificare il modelling mettendo mean+-stdev nei kfold          FATTO
 aggiungere gli altri modelli
-
-guardare bene il kfold e dirgli di fare accuracy solo sulla vali!!!!
+guardare bene il kfold e dirgli di fare accuracy solo sulla vali!!!!    FATTO
+bisogna guardare meglio le feature del singolo pokemon per tunare meglio -> sentiamoci
 
 ANGELO 
 commentare le celle dei notebook: 01_preprocessing.ipynb e 03_modeling.ipynb
@@ -30,6 +32,5 @@ provare a pensare a nuove feature da inserire (regola rasoio di occam) e aggiung
 
 
 
-
 COSE DA FARE PRIMA DI RUNNARE
-se cambi il dataset ricordati di trovare il migliore c possibile
+nella logistic se cambi il dataset ricordati di trovare il migliore c possibile
