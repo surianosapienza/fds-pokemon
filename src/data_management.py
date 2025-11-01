@@ -211,7 +211,7 @@ def pokemon_type(poke):
     types=pokemon_types.get(poke.lower(),["UNKNOWN"])
     return types
 
-def effectiveness(move_type, poke_types):
+def move_effectiveness(move_type, poke_types):
     """
     here we return the multiplier of effectivness (0; 0.5; 1; 2) of the move made on the pokemon
     """
@@ -225,6 +225,16 @@ def effectiveness(move_type, poke_types):
         elif type in noteffective_type[move_type]:
             multiplier*=0
     return int(round(multiplier))
+
+def pkmn_effectiveness(pkmn1_type, pkmn2_type):
+    multiplier = 1
+    for type1 in pkmn1_type:
+        for type2 in pkmn2_type:
+            if type1 in supereffective_type[type2]:
+                multiplier*=2
+            elif type1 in notreallyeffective_type[type2]:
+                multiplier*=0.5
+    return True if multiplier >= 2 else False
 
 def is_supereffective(move_type, poke_types):
     for type in poke_types:
