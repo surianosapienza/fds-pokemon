@@ -211,33 +211,38 @@ def pokemon_type(poke):
     types=pokemon_types.get(poke.lower(),["UNKNOWN"])
     return types
 
-def move_effectiveness(move_type, poke_types):
+def move_effectiveness(move_type, poke_name):
     """
     here we return the multiplier of effectivness (0; 0.5; 1; 2) of the move made on the pokemon
     """
+    poke_types = pokemon_type(poke_name)
+    return effectiveness(move_type, poke_types)
 
+def effectiveness(type1, type2):
     multiplier = 1.
-    for type in poke_types:
-        if type in supereffective_type[move_type]:
-            multiplier*=2.
-        elif type in notreallyeffective_type[move_type]:
-            multiplier*=0.5
-        elif type in noteffective_type[move_type]:
-            multiplier*=0.
-    return multiplier
-
-def pkmn_effectiveness(pkmn1_type, pkmn2_type):
-    multiplier = 1
-    for type1 in pkmn1_type:
-        for type2 in pkmn2_type:
-            if type1 in supereffective_type[type2]:
-                multiplier*=2
-            elif type1 in notreallyeffective_type[type2]:
+    if isinstance(type1, list):
+        for t1 in type1:
+            for t2 in type2:
+                if t1 in supereffective_type[t2]:
+                    multiplier*=2.
+                elif t1 in notreallyeffective_type[t2]:
+                    multiplier*=0.5
+    else:
+        for t in type2:
+            if t in supereffective_type[type1]:
+                multiplier*=2.
+            elif t in notreallyeffective_type[type1]:
                 multiplier*=0.5
-    return True if multiplier >= 2 else False
+            elif t in noteffective_type[type1]:
+                multiplier*=0.
+    return multiplier
+    
 
-def is_supereffective(move_type, poke_types):
-    for type in poke_types:
-        if type in supereffective_type[move_type]:
-            return True
-    return False
+
+def pkmn_effectiveness(pkmn1, pkmn2):
+    pkmn1_type = pokemon_type(pkmn1)
+    pkmn2_type = pokemon_type(pkmn2)
+    return effectiveness(pkmn1_type, pkmn2_type)
+
+def is_supereffective(multiplier):
+    return True if multiplier >= 2 else False
