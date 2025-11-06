@@ -33,7 +33,7 @@ pokemon_types = {
     "nidoran♂": ["POISON"],
     "nidorino": ["POISON"],
     "nidoking": ["POISON", "GROUND"],
-    "clefairy": ["NORMAL"],   # in Gen 1 Fairy non esisteva
+    "clefairy": ["NORMAL"],   # in Gen 1 Fairy doesn't exist
     "clefable": ["NORMAL"],
     "vulpix": ["FIRE"],
     "ninetales": ["FIRE"],
@@ -216,15 +216,15 @@ def move_effectiveness(move_type, poke_types):
     here we return the multiplier of effectivness (0; 0.5; 1; 2) of the move made on the pokemon
     """
 
-    multiplier = 1
+    multiplier = 1.
     for type in poke_types:
         if type in supereffective_type[move_type]:
-            multiplier*=2
+            multiplier*=2.
         elif type in notreallyeffective_type[move_type]:
             multiplier*=0.5
         elif type in noteffective_type[move_type]:
-            multiplier*=0
-    return int(round(multiplier))
+            multiplier*=0.
+    return multiplier
 
 def pkmn_effectiveness(pkmn1_type, pkmn2_type):
     multiplier = 1

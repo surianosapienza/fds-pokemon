@@ -2,6 +2,13 @@
 Cartella del progetto di fds
 link kaggle: https://www.kaggle.com/competitions/fds-pokemon-battles-prediction-2025
 
+
+IN GENERALE
+xgboost è il miglior modello. serve solo sistemare le feature adesso
+
+ho notato che in pokemon effectiveness manca il noteffective e chat mi da piccoli problemi
+c'è da implementare il colpo critico con la velocità
+
 TASK
 
 EDO
@@ -24,6 +31,7 @@ modificare il modelling mettendo mean+-stdev nei kfold          FATTO
 aggiungere gli altri modelli
 guardare bene il kfold e dirgli di fare accuracy solo sulla vali!!!!    FATTO
 bisogna guardare meglio le feature del singolo pokemon per tunare meglio -> sentiamoci
+
 
 ANGELO 
 commentare le celle dei notebook: 01_preprocessing.ipynb e 03_modeling.ipynb
