@@ -24,6 +24,11 @@ media delle medie delle stat del team FATTO
 somma delle priority
 bisogna guardare meglio le feature del singolo pokemon per tunare meglio -> sentiamoci
 
+max tra atk e sp atk (stessa cosa per defense)
+rivedere feature hp 
+fare un'unica feature per gli stati, assegnando un peso ad ogni stato e poi sommarli
+fare un'unica feature sul moltiplicatore mettendo insieme stab e super efficace
+
 
 FRA
 sistemare iperparametri 
