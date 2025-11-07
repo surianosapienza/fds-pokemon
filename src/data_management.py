@@ -211,14 +211,15 @@ def pokemon_type(poke):
     types=pokemon_types.get(poke.lower(),["UNKNOWN"])
     return types
 
-def move_effectiveness(move_type, poke_name):
+def move_effectiveness(move_type, poke_name, stab = False):
     """
     here we return the multiplier of effectivness (0; 0.5; 1; 2) of the move made on the pokemon
+    if stab = True, we multiply the move by 1.5 by the rules of the game
     """
     poke_types = pokemon_type(poke_name)
-    return effectiveness(move_type, poke_types)
+    return effectiveness(move_type, poke_types, stab)
 
-def effectiveness(type1, type2):
+def effectiveness(type1, type2, stab = False):
     multiplier = 1.0
     if isinstance(type1, list):
         for atk_t in type1:
@@ -235,6 +236,8 @@ def effectiveness(type1, type2):
                 multiplier*=0.5
             elif def_t in noteffective_type[type1]:
                 multiplier*=0.
+        if stab:
+            multiplier*=1.5
     return multiplier
     
 
