@@ -219,21 +219,21 @@ def move_effectiveness(move_type, poke_name):
     return effectiveness(move_type, poke_types)
 
 def effectiveness(type1, type2):
-    multiplier = 1.
+    multiplier = 1.0
     if isinstance(type1, list):
-        for t1 in type1:
-            for t2 in type2:
-                if t1 in supereffective_type[t2]:
-                    multiplier*=2.
-                elif t1 in notreallyeffective_type[t2]:
+        for atk_t in type1:
+            for def_t in type2:
+                if def_t in supereffective_type[atk_t]:
+                    multiplier*=2.0
+                elif def_t in notreallyeffective_type[atk_t]:
                     multiplier*=0.5
     else:
-        for t in type2:
-            if t in supereffective_type[type1]:
+        for def_t in type2:
+            if def_t in supereffective_type[type1]:
                 multiplier*=2.
-            elif t in notreallyeffective_type[type1]:
+            elif def_t in notreallyeffective_type[type1]:
                 multiplier*=0.5
-            elif t in noteffective_type[type1]:
+            elif def_t in noteffective_type[type1]:
                 multiplier*=0.
     return multiplier
     
@@ -245,4 +245,4 @@ def pkmn_effectiveness(pkmn1, pkmn2):
     return effectiveness(pkmn1_type, pkmn2_type)
 
 def is_supereffective(multiplier):
-    return True if multiplier >= 2 else False
+    return multiplier >= 2.0
