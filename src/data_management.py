@@ -207,6 +207,45 @@ noteffective_type = {
 }
 
 
+def missed_count_moves(timeline):
+    p1_pkmns =  set([turn["p1_pokemon_state"]["name"] for turn in timeline])
+    p2_pkmns = set([turn["p2_pokemon_state"]["name"] for turn in timeline])
+    t1_state = {p1_pkmn : [1.0, "nostatus"] for p1_pkmn in p1_pkmns}
+    t2_state = {p2_pkmn : [1.0, "nostatus"] for p2_pkmn in p2_pkmns}
+    t1_missed_moves_count = 0
+    t2_missed_moves_count = 0
+    for turn in timeline:
+        p1 = {
+            "name":turn['p1_pokemon_state']['name'],
+            "hp":turn['p1_pokemon_state']['hp_pct'],
+            "move_details":turn.get('p1_move_details',None),
+            "status":turn['p1_pokemon_state']['status']
+        }
+        p2 = {
+            "name":turn['p2_pokemon_state']['name'],
+            "hp":turn['p2_pokemon_state']['hp_pct'],
+            "move_details":turn.get('p2_move_details',None),
+            "status":turn['p2_pokemon_state']['status']
+        }
+
+        if p1["move_details"] and p1["move_details"].get('accuracy') < 1.0:
+            if p1["move_details"].get('category') in ["SPECIAL", "PHYSICAL"]:
+                if abs(p2["hp"] - t2_state[p2["name"]][0]) < 1e-6:
+                    t1_missed_moves_count += 1
+            else:
+                if p2["status"] == t2_state[p2["name"]][1]:
+                    t1_missed_moves_count += 1
+        if p2["move_details"] and p2["move_details"].get('accuracy') < 1.0:
+            if p2["move_details"].get('category') in ["SPECIAL", "PHYSICAL"]:
+                if abs(p1["hp"] - t1_state[p1["name"]][0]) < 1e-6:
+                    t2_missed_moves_count += 1
+            else:
+                if p1["status"] == t1_state[p1["name"]][1]:
+                    t2_missed_moves_count += 1
+        t1_state[p1["name"]] = [p1["hp"], p1["status"]]
+        t2_state[p2["name"]] = [p2["hp"], p2["status"]]
+    return t1_missed_moves_count, t2_missed_moves_count
+
 def pokemon_type(poke):
     # I associate at every pokemon its types   
     types=pokemon_types.get(poke.lower(),["UNKNOWN"])

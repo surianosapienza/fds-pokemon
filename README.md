@@ -25,8 +25,10 @@ guarda ogni stato singolarmente FATTO
 inserisci category e il count dei diversi tipi FATTO
 stessa cosa con gli stati come scritto appena su FATTO
 media delle medie delle stat del team FATTO 
-somma delle priority 
-bisogna guardare meglio le feature del singolo pokemon per tunare meglio -> sentiamoci
+bisogna guardare meglio le feature del singolo pokemon per tunare meglio -> sentiamoci FATTO
+media base_power delle mosse FATTO
+accuracy per le mosse di tipo STATUS (count di mosse non mandate a segno) 
+numero di miss 
 
 max tra atk e sp atk 
 rivedere feature hp FATTO
