@@ -206,6 +206,7 @@ noteffective_type = {
     "DRAGON": []
 }
 
+
 def pokemon_type(poke):
     # I associate at every pokemon its types   
     types=pokemon_types.get(poke.lower(),["UNKNOWN"])
