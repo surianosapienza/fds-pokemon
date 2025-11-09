@@ -91,8 +91,11 @@ def status_features(timeline):
             dict_status_p2[turn_status] += 1
     
     for status in total_statuses:
-        features[f"p1_{status}_count"] = dict_status_p1.get(status, 0)
-        features[f"p2_{status}_count"] = dict_status_p2.get(status, 0)
+        if status == 'nostatus':
+            continue
+        #features[f"p1_{status}_count"] = dict_status_p1.get(status, 0)
+        #features[f"p2_{status}_count"] = dict_status_p2.get(status, 0)
+        features[f"p1-p2_{status}_count"] = dict_status_p1.get(status, 0) - dict_status_p2.get(status, 0)
     # Single sum of all the status with their respect weight
     
     dict_status_p1["slp"] *= 0
@@ -112,17 +115,20 @@ def status_features(timeline):
     dict_status_p2["par"] *= 40
     dict_status_p2["nostatus"] *= 0
 
-    features["p1_status_weighted_sum"] = sum([val for val in dict_status_p1.values()])
-    features["p2_status_weighted_sum"] = sum([val for val in dict_status_p2.values()])
-    features["p2-p1_status_difference"] = features["p2_status_weighted_sum"] - features["p1_status_weighted_sum"]
+    #features["p1_status_weighted_sum"] = sum([val for val in dict_status_p1.values()])
+    #features["p2_status_weighted_sum"] = sum([val for val in dict_status_p2.values()])
+    #features["p2-p1_status_difference"] = features["p2_status_weighted_sum"] - features["p1_status_weighted_sum"]
+    p1_status_weighted_sum = sum([val for val in dict_status_p1.values()])
+    p2_status_weighted_sum = sum([val for val in dict_status_p2.values()])
+    features["p2-p1_status_difference"] = p2_status_weighted_sum - p1_status_weighted_sum
     
     ## fnt  features
     
     # Difference in fnt pkm
-    features["p2-p1_fnt_pokemon_number"] = features["p1_fnt_count"] - features["p2_fnt_count"]
-    # fnt pkmn over total pokemo
-    features["p1_fnt_over_total_pkmn"] = features["p1_fnt_count"]/6
-    features["p2_fnt_over_total_pkmn"] = features["p2_fnt_count"]/6
+    features["p1-p2_fnt_pokemon_number"] = dict_status_p1.get('fnt', 0) - dict_status_p2.get('fnt', 0)
+    # fnt pkmn over total pokemon
+    #features["p1_fnt_over_total_pkmn"] = features["p1_fnt_count"]/6
+    #features["p2_fnt_over_total_pkmn"] = features["p2_fnt_count"]/6
 
     return features
 
@@ -141,8 +147,9 @@ def effect_features(timeline):
             for effect in turn_effects_p2:
                 dict_effects_p2[effect] += 1            
     for effect in total_effects:
-        features[f"p1_{effect}_count"] = dict_effects_p1.get(effect, 0)
-        features[f"p2_{effect}_count"] = dict_effects_p2.get(effect, 0)
+        #features[f"p1_{effect}_count"] = dict_effects_p1.get(effect, 0)
+        #features[f"p2_{effect}_count"] = dict_effects_p2.get(effect, 0)
+        features[f"p1-p2_{effect}_count"] = dict_effects_p1.get(effect, 0) - dict_effects_p2.get(effect, 0) 
     
     return features
 
@@ -152,8 +159,9 @@ def battle_features(timeline):
     # Average HP percentage for both players
     p1_hp = [turn["p1_pokemon_state"].get("hp_pct", np.nan) for turn in timeline]
     p2_hp = [turn["p2_pokemon_state"].get("hp_pct", np.nan) for turn in timeline]
-    features["p1_mean_hp_pct"] = np.nanmean(p1_hp)
-    features["p2_mean_hp_pct"] = np.nanmean(p2_hp)
+    #features["p1_mean_hp_pct"] = np.nanmean(p1_hp)
+    #features["p2_mean_hp_pct"] = np.nanmean(p2_hp)
+    features["p1-p2_mean_hp_pct"] = np.nanmean(p1_hp) - np.nanmean(p2_hp)
     #features["p1_final_hp"] = p1_hp[-1]
     #features["p2_final_hp"] = p2_hp[-1]
     #features["p1_total_damage"] = max(p1_hp) - min(p1_hp)
@@ -163,20 +171,23 @@ def battle_features(timeline):
     p1_moves_used = [turn["p1_move_details"]["name"] for turn in timeline if turn.get("p1_move_details")]
     p2_moves_used = [turn["p2_move_details"]["name"] for turn in timeline if turn.get("p2_move_details")]
     high_crit = {"Crabhammer", "Karate Chop", "Razor Leaf", "Slash", "crabhammer", "karate chop", "razor leaf", "slash"}
-    features["p1_highcrit_moves_used"] = sum(m in high_crit for m in p1_moves_used)
-    features["p2_highcrit_moves_used"] = sum(m in high_crit for m in p2_moves_used)
+    #features["p1_highcrit_moves_used"] = sum(m in high_crit for m in p1_moves_used)
+    #features["p2_highcrit_moves_used"] = sum(m in high_crit for m in p2_moves_used)
+    features["p1-p2_highcrit_moves_used"] = sum(m in high_crit for m in p1_moves_used) - sum(m in high_crit for m in p2_moves_used)
     # Count total moves used
     p1_moves = [turn.get("p1_move_details", {}).get("name") for turn in timeline if turn.get("p1_move_details")]
     p2_moves = [turn.get("p2_move_details", {}).get("name") for turn in timeline if turn.get("p2_move_details")]
-    features["p1_total_moves"] = len(p1_moves)
-    features["p2_total_moves"] = len(p2_moves)
+    #features["p1_total_moves"] = len(p1_moves)
+    #features["p2_total_moves"] = len(p2_moves)
+    features["p1-p2_total_moves"] = len(p1_moves) - len(p2_moves)
     # Count unique move types used
     p1_move_types = [turn["p1_move_details"].get("type") for turn in timeline if turn.get("p1_move_details")]
     p2_move_types = [turn["p2_move_details"].get("type") for turn in timeline if turn.get("p2_move_details")]
-    features["p1_unique_move_types"] = len(set(p1_move_types))
-    features["p2_unique_move_types"] = len(set(p2_move_types))
+    #features["p1_unique_move_types"] = len(set(p1_move_types))
+    #features["p2_unique_move_types"] = len(set(p2_move_types))
+    features["p1-p2_unique_move_types"] = len(set(p1_move_types)) - len(set(p2_move_types))
     #""
-    p1_pkmns =  set([turn["p1_pokemon_state"]["name"] for turn in timeline])
+    p1_pkmns = set([turn["p1_pokemon_state"]["name"] for turn in timeline])
     p2_pkmns = set([turn["p2_pokemon_state"]["name"] for turn in timeline])
     ### status and effects features
     ## general status feature
@@ -194,36 +205,49 @@ def battle_features(timeline):
     features["p1_switch_number"] = sum([1 for turn in timeline if not turn.get("p1_move_details")])
     features["p2_switch_number"] = sum([1 for turn in timeline if not turn.get("p2_move_details")])
     # Number of SPECIAL or PHYSICAL moves and Number of STATUS moves of p1 and p2
-    features["p1_attack_moves"] = sum([1 for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
-    features["p2_attack_moves"] = sum([1 for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
-    features["p1_status_moves"] = sum([1 for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] not in ["SPECIAL", "PHYSICAL"]])
-    features["p2_status_moves"] = sum([1 for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] not in ["SPECIAL", "PHYSICAL"]])
+    #features["p1_attack_moves"] = sum([1 for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+    #features["p2_attack_moves"] = sum([1 for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+    features["p1-p2_attack_moves"] = sum([1 for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]]) - sum([1 for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+    #features["p1_status_moves"] = sum([1 for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] not in ["SPECIAL", "PHYSICAL"]])
+    #features["p2_status_moves"] = sum([1 for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] not in ["SPECIAL", "PHYSICAL"]])
+    features["p1-p2_status_moves"] = sum([1 for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] not in ["SPECIAL", "PHYSICAL"]]) - sum([1 for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] not in ["SPECIAL", "PHYSICAL"]])
     # Average of base power value for SPECIAL or PHYSICAL moves of p1 and p2
-    features["p1_mean_base_power"] = np.nanmean([turn['p1_move_details']['base_power'] for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
-    features["p2_mean_base_power"] = np.nanmean([turn['p2_move_details']['base_power'] for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+    #features["p1_mean_base_power"] = np.nanmean([turn['p1_move_details']['base_power'] for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+    #features["p2_mean_base_power"] = np.nanmean([turn['p2_move_details']['base_power'] for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+    features["p1-p2_mean_base_power"] = np.nanmean([turn['p1_move_details']['base_power'] for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]]) - np.nanmean([turn['p2_move_details']['base_power'] for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
     
     # number of missed moves
-    features['p1_missed_moves_count'], features['p2_missed_moves_count'] = my_dm.missed_count_moves(timeline)
+    #features['p1_missed_moves_count'], features['p2_missed_moves_count'] = my_dm.missed_count_moves(timeline)
+    p1_missed_moves_count, p2_missed_moves_count = my_dm.missed_count_moves(timeline)
+    features['p1-p2_missed_moves_count'] = p1_missed_moves_count - p2_missed_moves_count
     
     # Number of same pokemon type moves (stab)
-    features["p1_same_type_moves_number"] = sum([1 for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["type"] in my_dm.pokemon_type(turn["p1_pokemon_state"]["name"]) and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
-    features["p2_same_type_moves_number"] = sum([1 for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["type"] in my_dm.pokemon_type(turn["p2_pokemon_state"]["name"]) and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+    #features["p1_same_type_moves_number"] = sum([1 for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["type"] in my_dm.pokemon_type(turn["p1_pokemon_state"]["name"]) and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+    #features["p2_same_type_moves_number"] = sum([1 for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["type"] in my_dm.pokemon_type(turn["p2_pokemon_state"]["name"]) and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+    features["p1-p2_same_type_moves_number"] = sum([1 for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["type"] in my_dm.pokemon_type(turn["p1_pokemon_state"]["name"]) and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]]) - sum([1 for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["type"] in my_dm.pokemon_type(turn["p2_pokemon_state"]["name"]) and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
     # Average of multiplier effectivness (stab included)
+    #value = np.nanmean([my_dm.move_effectiveness(turn["p1_move_details"]["type"], turn["p2_pokemon_state"]["name"], turn["p1_move_details"]["type"] in my_dm.pokemon_type(turn["p1_pokemon_state"]["name"])) for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+    #features["p1_effectivness_avg"] = 0 if np.isnan(value) else value
+    #value = np.nanmean([my_dm.move_effectiveness(turn["p2_move_details"]["type"], turn["p1_pokemon_state"]["name"], turn["p2_move_details"]["type"] in my_dm.pokemon_type(turn["p2_pokemon_state"]["name"])) for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+    #features["p2_effectivness_avg"] = 0 if np.isnan(value) else value
     value = np.nanmean([my_dm.move_effectiveness(turn["p1_move_details"]["type"], turn["p2_pokemon_state"]["name"], turn["p1_move_details"]["type"] in my_dm.pokemon_type(turn["p1_pokemon_state"]["name"])) for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
-    features["p1_effectivness_avg"] = 0 if np.isnan(value) else value
+    p1_effectivness_avg = 0 if np.isnan(value) else value
     value = np.nanmean([my_dm.move_effectiveness(turn["p2_move_details"]["type"], turn["p1_pokemon_state"]["name"], turn["p2_move_details"]["type"] in my_dm.pokemon_type(turn["p2_pokemon_state"]["name"])) for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
-    features["p2_effectivness_avg"] = 0 if np.isnan(value) else value
+    p2_effectivness_avg = 0 if np.isnan(value) else value
+    features["p1-p2_effectivness_avg"] = p1_effectivness_avg - p2_effectivness_avg 
     # Number of supereffective moves
-    features["p1_supereffective_moves_count"] = sum([my_dm.is_supereffective(my_dm.move_effectiveness(turn["p1_move_details"]["type"], turn["p2_pokemon_state"]["name"])) for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
-    features["p2_supereffective_moves_count"] = sum([my_dm.is_supereffective(my_dm.move_effectiveness(turn["p2_move_details"]["type"], turn["p1_pokemon_state"]["name"])) for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
-    
+    #features["p1_supereffective_moves_count"] = sum([my_dm.is_supereffective(my_dm.move_effectiveness(turn["p1_move_details"]["type"], turn["p2_pokemon_state"]["name"])) for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+    #features["p2_supereffective_moves_count"] = sum([my_dm.is_supereffective(my_dm.move_effectiveness(turn["p2_move_details"]["type"], turn["p1_pokemon_state"]["name"])) for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+    features["p1-p2_supereffective_moves_count"] = sum([my_dm.is_supereffective(my_dm.move_effectiveness(turn["p1_move_details"]["type"], turn["p2_pokemon_state"]["name"])) for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]]) - sum([my_dm.is_supereffective(my_dm.move_effectiveness(turn["p2_move_details"]["type"], turn["p1_pokemon_state"]["name"])) for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+
     # Sum of priority moves LOGICA SBAGLIATA
     #features["p1_priority_moves"] = sum([1 for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"].get("priority")])
     #features["p2_priority_moves"] = sum([1 for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"].get("priority")]
     # Number of supereffective pokemon of p1 in respect to p2
-    features["p1_supereffective_density"] = sum(1 for pkmn1 in p1_pkmns for pkmn2 in p2_pkmns if my_dm.is_supereffective(my_dm.pkmn_effectiveness(pkmn1, pkmn2)))/(len(p1_pkmns)*len(p2_pkmns))
-    features["p2_supereffective_density"] = sum(1 for pkmn1 in p1_pkmns for pkmn2 in p2_pkmns if my_dm.is_supereffective(my_dm.pkmn_effectiveness(pkmn2, pkmn1)))/(len(p1_pkmns)*len(p2_pkmns))
-    features["p1-p2_se_densities"] = features["p2_supereffective_density"] - features["p1_supereffective_density"]
+    #features["p1_supereffective_density"] = sum(1 for pkmn1 in p1_pkmns for pkmn2 in p2_pkmns if my_dm.is_supereffective(my_dm.pkmn_effectiveness(pkmn1, pkmn2)))/(len(p1_pkmns)*len(p2_pkmns))
+    #features["p2_supereffective_density"] = sum(1 for pkmn1 in p1_pkmns for pkmn2 in p2_pkmns if my_dm.is_supereffective(my_dm.pkmn_effectiveness(pkmn2, pkmn1)))/(len(p1_pkmns)*len(p2_pkmns))
+    #features["p1-p2_se_densities"] = features["p2_supereffective_density"] - features["p1_supereffective_density"]
+    features["p1-p2_se_densities"] = sum(1 for pkmn1 in p1_pkmns for pkmn2 in p2_pkmns if my_dm.is_supereffective(my_dm.pkmn_effectiveness(pkmn1, pkmn2)))/(len(p1_pkmns)*len(p2_pkmns)) - sum(1 for pkmn1 in p1_pkmns for pkmn2 in p2_pkmns if my_dm.is_supereffective(my_dm.pkmn_effectiveness(pkmn2, pkmn1)))/(len(p1_pkmns)*len(p2_pkmns))
     # P1 pkmn having at least a supereffective target in p2 team
     features["p1_attackers_share"] = sum(any(my_dm.is_supereffective(my_dm.pkmn_effectiveness(pkmn1, pkmn2)) for pkmn2 in p2_pkmns) for pkmn1 in p1_pkmns) / 6
     # P1 pkmn that are target of at least one pkmn in team 2
@@ -235,9 +259,10 @@ def battle_features(timeline):
         p1_hp_pctg.update({turn["p1_pokemon_state"]["name"] : turn["p1_pokemon_state"]["hp_pct"]})
         p2_hp_pctg.update({turn["p2_pokemon_state"]["name"] : turn["p2_pokemon_state"]["hp_pct"]})
     
-    features["p1_remain_health_avg"] = (sum(p1_hp_pctg.values()) + 1*(6-len(p1_hp_pctg)))/6
-    features["p2_remain_health_avg"] = (sum(p2_hp_pctg.values()) + 1*(6-len(p2_hp_pctg)))/6
-    features["health_difference"] = features["p2_remain_health_avg"] - features["p1_remain_health_avg"]
+    #features["p1_remain_health_avg"] = (sum(p1_hp_pctg.values()) + 1*(6-len(p1_hp_pctg)))/6
+    #features["p2_remain_health_avg"] = (sum(p2_hp_pctg.values()) + 1*(6-len(p2_hp_pctg)))/6
+    #features["health_difference"] = features["p2_remain_health_avg"] - features["p1_remain_health_avg"]
+    features["health_difference"] = (sum(p1_hp_pctg.values()) + 1*(6-len(p1_hp_pctg)))/6 - (sum(p2_hp_pctg.values()) + 1*(6-len(p2_hp_pctg)))/6
     return features
 
 def create_features(data: list[dict]) -> pd.DataFrame:
