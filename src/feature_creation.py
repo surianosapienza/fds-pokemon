@@ -125,7 +125,7 @@ def status_features(timeline):
     ## fnt  features
     
     # Difference in fnt pkm
-    features["p1-p2_fnt_pokemon_number"] = dict_status_p1.get('fnt', 0) - dict_status_p2.get('fnt', 0)
+    #features["p1-p2_fnt_pokemon_number"] = dict_status_p1.get('fnt', 0) - dict_status_p2.get('fnt', 0)
     # fnt pkmn over total pokemon
     #features["p1_fnt_over_total_pkmn"] = features["p1_fnt_count"]/6
     #features["p2_fnt_over_total_pkmn"] = features["p2_fnt_count"]/6
@@ -291,4 +291,77 @@ def create_features(data: list[dict]) -> pd.DataFrame:
 
         feature_list.append(features)
         
+    return pd.DataFrame(feature_list).fillna(0)
+
+def create_essentials_features(data):
+    feature_list = []
+    for battle in data:
+        features = {}
+        features["battle_id"] = battle.get("battle_id", -1)
+        if battle.get('player_won') is not None:
+            features['player_won'] = int(battle['player_won'])
+        # --- Player 1 Team Features ---
+        p1_team = battle.get('p1_team_details', [])
+        if p1_team:
+            stats = ['base_hp', 'base_atk', 'base_def', 'base_spa', 'base_spd', 'base_spe']
+            for stat in stats:               ### This helps the model to have a better idea abt the time instead of having only mean
+                values = [p.get(stat, 0) for p in p1_team]
+            p1_mean_atk = np.mean([np.max([p['base_atk'], p['base_spa']]) for p in p1_team])
+            p1_mean_hp = np.mean([p.get('base_hp', 0) for p in p1_team])
+            p1_mean_spe = np.mean([p.get('base_spe', 0) for p in p1_team])
+            p1_mean_def = np.mean([np.mean([p['base_def'], p['base_spd']]) for p in p1_team])
+            p1_mean_stats = np.mean([p1_mean_hp, p1_mean_spe, p1_mean_atk, p1_mean_def])
+            features['p1_mean_spe'] = p1_mean_spe
+            features['p1_mean_stats'] = p1_mean_stats
+            ### We can also build derivated feature like how much is off/def our team
+            # team stats
+            base_atk = np.mean([p.get('base_atk', 0) for p in p1_team])
+            base_spa = np.mean([p.get('base_spa', 0) for p in p1_team])
+            base_def = np.mean([p.get('base_def', 0) for p in p1_team])
+            base_spd = np.mean([p.get('base_spd', 0) for p in p1_team])
+            base_spe = np.mean([p.get('base_spe', 0) for p in p1_team])
+            base_hp  = np.mean([p.get('base_hp', 0) for p in p1_team])
+            ## constructing new features
+            offense = base_atk + base_spa
+            defense = base_def + base_spd
+            features['p1_offense_mean']    = offense
+            features['p1_defense_mean']    = defense
+            features['p1_atk_def_ratio']   = p1_mean_atk / (p1_mean_def + 1e-6)
+            # average per-Pokémon total base stats
+            p1_totals = [sum(p.get(s, 0) for s in stats) for p in p1_team]
+            features['p1_total_base_power'] = float(np.mean(p1_totals))
+
+            # fastest member speed 
+            features['p1_max_speed'] = float(np.max([p.get('base_spe', 0) for p in p1_team]))
+        p2_lead = battle.get('p2_lead_details')
+        if p2_lead:
+            p2_lead_hp = p2_lead.get('base_hp', 0)
+            p2_lead_spe = p2_lead.get('base_spe', 0)
+            p2_lead_atk = p2_lead.get('base_atk', 0)
+            p2_lead_def = p2_lead.get('base_def', 0)
+            p2_lead_spd = p2_lead.get('base_spd', 0)
+            p2_lead_spa = p2_lead.get('base_spa', 0)
+            features['p2_lead_spe'] = p2_lead_spe
+            features['p2_lead_mean_stats'] = np.mean([p2_lead_hp, p2_lead_spe, p2_lead_atk, p2_lead_def, p2_lead_spd, p2_lead_spa])
+
+        timeline = battle.get("battle_timeline", [])
+        if len(timeline) > 0:
+            features.update(status_features(timeline))
+            features["p1-p2_mean_base_power"] = np.nanmean([turn['p1_move_details']['base_power'] for turn in timeline if turn.get("p1_move_details") and turn["p1_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]]) - np.nanmean([turn['p2_move_details']['base_power'] for turn in timeline if turn.get("p2_move_details") and turn["p2_move_details"]["category"] in ["SPECIAL", "PHYSICAL"]])
+            p1_missed_moves_count, p2_missed_moves_count = my_dm.missed_count_moves(timeline)
+            features['p1-p2_missed_moves_count'] = p1_missed_moves_count - p2_missed_moves_count
+            p1_pkmns = set([turn["p1_pokemon_state"]["name"] for turn in timeline])
+            p2_pkmns = set([turn["p2_pokemon_state"]["name"] for turn in timeline])
+            p1_hp_pctg = {p1_pkmn : None for p1_pkmn in p1_pkmns}
+            p2_hp_pctg = {p2_pkmn : None for p2_pkmn in p2_pkmns}
+            for turn in timeline:
+                p1_hp_pctg.update({turn["p1_pokemon_state"]["name"] : turn["p1_pokemon_state"]["hp_pct"]})
+                p2_hp_pctg.update({turn["p2_pokemon_state"]["name"] : turn["p2_pokemon_state"]["hp_pct"]})
+
+            #features["p1_remain_health_avg"] = (sum(p1_hp_pctg.values()) + 1*(6-len(p1_hp_pctg)))/6
+            #features["p2_remain_health_avg"] = (sum(p2_hp_pctg.values()) + 1*(6-len(p2_hp_pctg)))/6
+            #features["health_difference"] = features["p2_remain_health_avg"] - features["p1_remain_health_avg"]
+            features["health_difference"] = (sum(p1_hp_pctg.values()) + 1*(6-len(p1_hp_pctg)))/6 - (sum(p2_hp_pctg.values()) + 1*(6-len(p2_hp_pctg)))/6
+        feature_list.append(features)
+    
     return pd.DataFrame(feature_list).fillna(0)

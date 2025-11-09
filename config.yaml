@@ -1,7 +1,7 @@
 data:
-  input_train_path: "../data/raw/train.jsonl"
-  input_test_path: "../data/raw/test.jsonl"
-  processed_train_path: "../data/processed/train_features.csv"
-  processed_test_path: "../data/processed/test_features.csv"
+  input_train_path: "../data/train/raw/train.jsonl"
+  input_test_path: "../data/test/raw/test.jsonl"
+  processed_train_path: "../data/train/processed/train_features.csv"
+  processed_test_path: "../data/test/processed/test_features.csv"
 output:
   path: "../output/submission.csv"
