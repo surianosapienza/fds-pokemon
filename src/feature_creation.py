@@ -2,6 +2,9 @@ import numpy as np
 import pandas as pd
 import src.data_management as my_dm
 
+all_types = ['dragon', 'electric', 'fire', 'flying', 'ghost', 'grass', 'ground', 'ice', 'normal', 'notype', 'poison', 'psychic', 'rock', 'water']
+
+
 def p1_features(p1_team: list[dict]):
     features = {}
     #"""
@@ -23,31 +26,37 @@ def p1_features(p1_team: list[dict]):
     features['p1_mean_stats'] = p1_mean_stats
     ### We can also build derivated feature like how much is off/def our team
     # team stats
+    base_atk = np.mean([p.get('base_atk', 0) for p in p1_team])
+    base_spa = np.mean([p.get('base_spa', 0) for p in p1_team])
+    base_def = np.mean([p.get('base_def', 0) for p in p1_team])
+    base_spd = np.mean([p.get('base_spd', 0) for p in p1_team])
+    base_spe = np.mean([p.get('base_spe', 0) for p in p1_team])
+    base_hp  = np.mean([p.get('base_hp', 0) for p in p1_team])
     ## constructing new features
-    #offense = base_atk + base_spa
-    #defense = base_def + base_spd
-    #features['p1_offense_mean']    = offense
-    #features['p1_defense_mean']    = defense
+    offense = base_atk + base_spa
+    defense = base_def + base_spd
+    features['p1_offense_mean']    = offense
+    features['p1_defense_mean']    = defense
     features['p1_atk_def_ratio']   = p1_mean_atk / (p1_mean_def + 1e-6)
     # average per-Pokémon total base stats
     p1_totals = [sum(p.get(s, 0) for s in stats) for p in p1_team]
     features['p1_total_base_power'] = float(np.mean(p1_totals))
-    #features['p1_stat_variety']     = float(np.std(p1_totals))
-    #features['p1_style_index']      = offense / (offense + defense + 1e-6)
-    #features['p1_hp_ratio']         = base_hp / (offense + defense + base_spe + 1e-6)
+    features['p1_stat_variety']     = float(np.std(p1_totals))
+    features['p1_style_index']      = offense / (offense + defense + 1e-6)
+    features['p1_hp_ratio']         = base_hp / (offense + defense + base_spe + 1e-6)
     
     # fastest member speed 
     features['p1_max_speed'] = float(np.max([p.get('base_spe', 0) for p in p1_team]))
 
     """
     """
-    #type_counts = {t: 0 for t in all_types}
-    #for p in p1_team:
-    #    for t in p.get('types', []):
-    #        type_counts[t] += 1
-    #team_size = len(p1_team)
-    #for t in all_types:
-    #    features[f'p1_type_{t}'] = type_counts[t] / team_size if team_size > 0 else 0
+    type_counts = {t: 0 for t in all_types}
+    for p in p1_team:
+        for t in p.get('types', []):
+            type_counts[t] += 1
+    team_size = len(p1_team)
+    for t in all_types:
+        features[f'p1_type_{t}'] = type_counts[t] / team_size if team_size > 0 else 0
     return features
 
 def p2_lead_features(p2_lead):
@@ -60,11 +69,12 @@ def p2_lead_features(p2_lead):
     features['p2_lead_spd'] = p2_lead.get('base_spd', 0)
     features['p2_lead_spa'] = p2_lead.get('base_spa', 0)
     ## types of p2 lead
-    #for t in all_types:
-    #    features[f'p2_lead_type_{t}'] = 0.0
-    #for t in p2_lead.get('types', []):
-    #    if t in all_types:
-    #        features[f'p2_lead_type_{t}'] = 1.0
+    
+    for t in all_types:
+        features[f'p2_lead_type_{t}'] = 0.0
+    for t in p2_lead.get('types', []):
+        if t in all_types:
+            features[f'p2_lead_type_{t}'] = 1.0
     return features
 
 def status_features(timeline):
@@ -163,8 +173,8 @@ def battle_features(timeline):
     # Count unique move types used
     p1_move_types = [turn["p1_move_details"].get("type") for turn in timeline if turn.get("p1_move_details")]
     p2_move_types = [turn["p2_move_details"].get("type") for turn in timeline if turn.get("p2_move_details")]
-    #features["p1_unique_move_types"] = len(set(p1_move_types))
-    #features["p2_unique_move_types"] = len(set(p2_move_types))
+    features["p1_unique_move_types"] = len(set(p1_move_types))
+    features["p2_unique_move_types"] = len(set(p2_move_types))
     #""
     p1_pkmns =  set([turn["p1_pokemon_state"]["name"] for turn in timeline])
     p2_pkmns = set([turn["p2_pokemon_state"]["name"] for turn in timeline])

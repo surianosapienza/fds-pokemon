@@ -27,10 +27,11 @@ stessa cosa con gli stati come scritto appena su FATTO
 media delle medie delle stat del team FATTO 
 bisogna guardare meglio le feature del singolo pokemon per tunare meglio -> sentiamoci FATTO
 media base_power delle mosse FATTO
-accuracy per le mosse di tipo STATUS (count di mosse non mandate a segno) 
-numero di miss 
+accuracy per le mosse di tipo STATUS (count di mosse non mandate a segno) FATTO 
+numero di miss FATTO
 
-max tra atk e sp atk 
+
+max tra atk e sp atk FATTO
 rivedere feature hp FATTO
 fare un'unica feature per gli stati, assegnando un peso ad ogni stato e poi sommarli FATTO
 fare un'unica feature sul moltiplicatore mettendo insieme stab e super efficace FATTO
