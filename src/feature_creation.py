@@ -48,8 +48,8 @@ def p1_features(p1_team: list[dict]):
     # fastest member speed 
     features['p1_max_speed'] = float(np.max([p.get('base_spe', 0) for p in p1_team]))
 
-    """
-    """
+    
+    
     type_counts = {t: 0 for t in all_types}
     for p in p1_team:
         for t in p.get('types', []):
@@ -57,6 +57,7 @@ def p1_features(p1_team: list[dict]):
     team_size = len(p1_team)
     for t in all_types:
         features[f'p1_type_{t}'] = type_counts[t] / team_size if team_size > 0 else 0
+        
     return features
 
 def p2_lead_features(p2_lead):
@@ -75,6 +76,7 @@ def p2_lead_features(p2_lead):
     for t in p2_lead.get('types', []):
         if t in all_types:
             features[f'p2_lead_type_{t}'] = 1.0
+    
     return features
 
 def status_features(timeline):
@@ -89,7 +91,7 @@ def status_features(timeline):
         if turn["p2_pokemon_state"].get("status"):
             turn_status = turn["p2_pokemon_state"].get("status")
             dict_status_p2[turn_status] += 1
-    
+
     for status in total_statuses:
         if status == 'nostatus':
             continue
@@ -153,7 +155,6 @@ def effect_features(timeline):
     
     return features
 
-
 def battle_features(timeline):
     features = {}
     # Average HP percentage for both players
@@ -195,12 +196,14 @@ def battle_features(timeline):
     ## effects feature
     features.update(effect_features(timeline))
     ## Boosts (attack, defense, etc.)
+    
     boost_keys = ["atk", "def", "spa", "spd", "spe"]
     for key in boost_keys:
         p1_boosts = [turn["p1_pokemon_state"]["boosts"].get(key, 0) for turn in timeline]
         p2_boosts = [turn["p2_pokemon_state"]["boosts"].get(key, 0) for turn in timeline]
         features[f"p1_mean_boost_{key}"] = np.mean(p1_boosts)
         features[f"p2_mean_boost_{key}"] = np.mean(p2_boosts)
+    
     # Number of time the player switched pokemon
     features["p1_switch_number"] = sum([1 for turn in timeline if not turn.get("p1_move_details")])
     features["p2_switch_number"] = sum([1 for turn in timeline if not turn.get("p2_move_details")])
@@ -264,6 +267,7 @@ def battle_features(timeline):
     #features["health_difference"] = features["p2_remain_health_avg"] - features["p1_remain_health_avg"]
     features["health_difference"] = (sum(p1_hp_pctg.values()) + 1*(6-len(p1_hp_pctg)))/6 - (sum(p2_hp_pctg.values()) + 1*(6-len(p2_hp_pctg)))/6
     return features
+
 
 def create_features(data: list[dict]) -> pd.DataFrame:
     """
@@ -362,6 +366,9 @@ def create_essentials_features(data):
             #features["p2_remain_health_avg"] = (sum(p2_hp_pctg.values()) + 1*(6-len(p2_hp_pctg)))/6
             #features["health_difference"] = features["p2_remain_health_avg"] - features["p1_remain_health_avg"]
             features["health_difference"] = (sum(p1_hp_pctg.values()) + 1*(6-len(p1_hp_pctg)))/6 - (sum(p2_hp_pctg.values()) + 1*(6-len(p2_hp_pctg)))/6
+
+            hp_advantage_streak = sum(p1 > p2 for p1, p2 in zip(p1_hp_pctg, p2_hp_pctg))
+            features["p1_hp_advantage_ratio"] = hp_advantage_streak / len(timeline)
         feature_list.append(features)
     
     return pd.DataFrame(feature_list).fillna(0)

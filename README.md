@@ -13,6 +13,8 @@ forse ha piu senso considerare la differenza tra max e min per le singole stats 
 
 ho provato a rimuovere delle feature ma lo score e' peggiorato, la versione non aggiornata si trova in preprocessing_backup
 
+stavo pensando di mettere una feature sulla forza residua piuttosto che la forza a inizio combattimento
+
 TASK
 
 EDO
