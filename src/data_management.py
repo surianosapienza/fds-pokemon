@@ -289,3 +289,4 @@ def pkmn_effectiveness(pkmn1, pkmn2):
 
 def is_supereffective(multiplier):
     return multiplier >= 2.0
+
