@@ -195,18 +195,24 @@ def effect_features(timeline):
 
 def battle_features(timeline):
     features = {}
+    
+    features['p1_switched_on_turn1'] = 0 if timeline[0].get("p1_move_details") else 1
+    features['p2_switched_on_turn1'] = 0 if timeline[0].get("p2_move_details") else 1
     # Average HP percentage for both players
     p1_hp = [turn["p1_pokemon_state"].get("hp_pct", np.nan) for turn in timeline]
     p2_hp = [turn["p2_pokemon_state"].get("hp_pct", np.nan) for turn in timeline]
-    #features["p1_mean_hp_pct"] = np.nanmean(p1_hp)
-    #features["p2_mean_hp_pct"] = np.nanmean(p2_hp)
+
     features["p1-p2_mean_hp_pct"] = np.nanmean(p1_hp) - np.nanmean(p2_hp)
-    #features["p1_final_hp"] = p1_hp[-1]
-    #features["p2_final_hp"] = p2_hp[-1]
-    #features["p1_total_damage"] = max(p1_hp) - min(p1_hp)
-    #features["p2_total_damage"] = max(p2_hp) - min(p2_hp
-    # Count probably critical moves
     
+    # Slope of hp percentage
+    hp_diffs = [turn["p1_pokemon_state"]["hp_pct"] - turn["p2_pokemon_state"]["hp_pct"] for turn in timeline]
+    turns = np.arange(len(hp_diffs)) 
+    slope, _ = np.polyfit(turns, hp_diffs, 1)
+    features['hp_advantage_slope'] = slope
+
+    last_5_diffs = hp_diffs[-5:]
+    features['hp_adv_last_5_turns'] = np.nanmean(last_5_diffs)
+
     p1_moves_used = [turn["p1_move_details"]["name"] for turn in timeline if turn.get("p1_move_details")]
     p2_moves_used = [turn["p2_move_details"]["name"] for turn in timeline if turn.get("p2_move_details")]
     high_crit = {"Crabhammer", "Karate Chop", "Razor Leaf", "Slash", "crabhammer", "karate chop", "razor leaf", "slash"}
@@ -432,3 +438,11 @@ def create_essentials_features(data):
         feature_list.append(features)
     
     return pd.DataFrame(feature_list).fillna(0)
+
+def low_variance_features(df, threshold=0.999):
+    to_drop = []
+    for col in df.columns:
+        top_freq = df[col].value_counts(normalize=True, dropna=False).iloc[0]
+        if top_freq >= threshold:
+            to_drop.append(col)
+    return to_drop
