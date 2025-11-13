@@ -119,8 +119,8 @@ def status_features(timeline, team1, team2):
     for status in total_statuses:
         if status == 'nostatus':
             continue
-        #features[f"p1_{status}_count"] = dict_status_p1.get(status, 0)
-        #features[f"p2_{status}_count"] = dict_status_p2.get(status, 0)
+        features[f"p1_{status}_count"] = dict_status_p1.get(status, 0)
+        features[f"p2_{status}_count"] = dict_status_p2.get(status, 0)
         features[f"p1-p2_{status}_count"] = dict_status_p1.get(status, 0) - dict_status_p2.get(status, 0)
 
     
@@ -193,6 +193,105 @@ def effect_features(timeline):
 
     return features
 
+def kinetic_threat_features(timeline, p1_team_details, p2_lead_details):
+    features = {}
+    # 1. Mappa le statistiche base per un accesso rapido
+    # Creiamo un dizionario {nome_pokemon: {stats...}} per P1
+    p1_stats_map = {p['name']: p for p in p1_team_details}
+    
+    # Per P2, abbiamo solo il lead sicuro, gli altri li stimiamo dalla timeline
+    # Se non abbiamo le stats, useremo una media "fittizia" di un Pokémon competitivo (es. 80 in tutto)
+    AVG_META_STATS = {'base_spe': 80, 'base_atk': 80, 'base_spa': 80}
+
+    # Pesi degli Status in Gen 1 (Severità)
+    # SLP/FRZ in Gen 1 sono quasi death sentence -> peso vicino a 0
+    # PAR taglia la velocità di 1/4 -> peso medio
+    STATUS_MULTIPLIERS = {
+        'nostatus': 1.0,
+        'psn': 0.9,   # Fastidio
+        'tox': 0.8,   # Fastidio grave
+        'brn': 0.6,   # Dimezza l'attacco fisico!
+        'par': 0.4,   # Quarta la velocità (niente crits) + perdita turni
+        'slp': 0.1,   # Praticamente morto
+        'frz': 0.0,   # Totalmente morto (in Gen 1 non ci si scongela quasi mai)
+        'fnt': 0.0,
+        None: 1.0
+    }
+
+    # Dizionari per tracciare l'ultimo stato noto di ogni Pokémon visto
+    # Struttura: {nome: {'hp_pct': 1.0, 'status': 'nostatus'}}
+    p1_state_tracker = {} 
+    p2_state_tracker = {}
+    
+    # Inizializza con il team P1 (tutti vivi all'inizio)
+    for p in p1_team_details:
+        p1_state_tracker[p['name']] = {'hp_pct': 1.0, 'status': 'nostatus'}
+        
+    # Inizializza P2 col lead
+    if p2_lead_details:
+        p2_state_tracker[p2_lead_details['name']] = {'hp_pct': 1.0, 'status': 'nostatus'}
+
+    # --- 2. Scansiona la Timeline per aggiornare gli stati ---
+    for turn in timeline:
+        # Aggiorna P1
+        p1_name = turn["p1_pokemon_state"]["name"]
+        p1_state_tracker[p1_name] = {
+            'hp_pct': turn["p1_pokemon_state"]["hp_pct"],
+            'status': turn["p1_pokemon_state"].get("status", "nostatus")
+        }
+        
+        # Aggiorna P2
+        p2_name = turn["p2_pokemon_state"]["name"]
+        p2_state_tracker[p2_name] = {
+            'hp_pct': turn["p2_pokemon_state"]["hp_pct"],
+            'status': turn["p2_pokemon_state"].get("status", "nostatus")
+        }
+
+    # --- 3. Calcola il KTI Score Finale ---
+    
+    def calculate_kti(tracker, stats_map, is_p2=False):
+        total_kti = 0
+        
+        for name, state in tracker.items():
+            hp = state['hp_pct']
+            status = state['status']
+            
+            # Se è morto o congelato, non contribuisce alla minaccia
+            if hp <= 0 or status == 'fnt':
+                continue
+                
+            # Recupera le stats base
+            if not is_p2 and name in stats_map:
+                base_spe = stats_map[name].get('base_spe', 80)
+                base_off = max(stats_map[name].get('base_atk', 80), stats_map[name].get('base_spa', 80))
+            elif is_p2 and p2_lead_details and name == p2_lead_details['name']:
+                base_spe = p2_lead_details.get('base_spe', 80)
+                base_off = max(p2_lead_details.get('base_atk', 80), p2_lead_details.get('base_spa', 80))
+            else:
+                # Stima per Pokémon P2 non-lead (assumiamo siano 'mediamente forti')
+                base_spe = AVG_META_STATS['base_spe']
+                base_off = AVG_META_STATS['base_atk']
+
+            # --- LA FORMULA MAGICA ---
+            # KTI = HP * Offesa * (Velocità ^ 1.3) * Malus_Status
+            # Eleviamo la velocità a 1.3 perché in Gen 1 la velocità è esponenzialmente potente (Crits)
+            
+            status_mult = STATUS_MULTIPLIERS.get(status, 1.0)
+            
+            # Bonus extra se il Pokémon è "meta" (Tauros/Snorlax/Chansey) perché le stats non dicono tutto
+            meta_bonus = 1.2 if name in {'tauros', 'snorlax', 'chansey', 'exeggutor', 'alakazam', 'starmie'} else 1.0
+            
+            threat_score = hp * base_off * (base_spe ** 1.3) * status_mult * meta_bonus
+            total_kti += threat_score
+            
+        return total_kti
+
+    p1_kti = calculate_kti(p1_state_tracker, p1_stats_map, is_p2=False)
+    p2_kti = calculate_kti(p2_state_tracker, {}, is_p2=True)
+    
+    features["p1-p2_kinetic_threat_diff"] = p1_kti - p2_kti
+    return features
+
 def battle_features(timeline):
     features = {}
     
@@ -201,6 +300,10 @@ def battle_features(timeline):
     # Average HP percentage for both players
     p1_hp = [turn["p1_pokemon_state"].get("hp_pct", np.nan) for turn in timeline]
     p2_hp = [turn["p2_pokemon_state"].get("hp_pct", np.nan) for turn in timeline]
+
+    p1_total_damage = np.nansum(np.maximum(0, np.diff(p1_hp)))
+    p2_total_damage = np.nansum(np.maximum(0, np.diff(p2_hp)))
+    features["p1-p2_total_damage"] = p1_total_damage - p2_total_damage
 
     features["p1-p2_mean_hp_pct"] = np.nanmean(p1_hp) - np.nanmean(p2_hp)
     
@@ -322,14 +425,23 @@ def battle_features(timeline):
     # mean of hp percentage for p1 team and p2 team on last informations
     p1_hp_pctg = {p1_pkmn : None for p1_pkmn in p1_pkmns}
     p2_hp_pctg = {p2_pkmn : None for p2_pkmn in p2_pkmns}
+    counter1 = 0
+    counter2 = 0
     for turn in timeline:
         p1_hp_pctg.update({turn["p1_pokemon_state"]["name"] : turn["p1_pokemon_state"]["hp_pct"]})
         p2_hp_pctg.update({turn["p2_pokemon_state"]["name"] : turn["p2_pokemon_state"]["hp_pct"]})
+
+        counter1 += turn["p1_pokemon_state"]["hp_pct"] > turn["p2_pokemon_state"]["hp_pct"]
+        counter2 += turn["p1_pokemon_state"]["hp_pct"] < turn["p2_pokemon_state"]["hp_pct"]
     
-    #features["p1_remain_health_avg"] = (sum(p1_hp_pctg.values()) + 1*(6-len(p1_hp_pctg)))/6
-    #features["p2_remain_health_avg"] = (sum(p2_hp_pctg.values()) + 1*(6-len(p2_hp_pctg)))/6
+    p1_remain_health_avg = (sum(p1_hp_pctg.values()) + 1*(6-len(p1_hp_pctg)))/6
+    p2_remain_health_avg = (sum(p2_hp_pctg.values()) + 1*(6-len(p2_hp_pctg)))/6
     #features["health_difference"] = features["p2_remain_health_avg"] - features["p1_remain_health_avg"]
-    features["health_difference"] = (sum(p1_hp_pctg.values()) + 1*(6-len(p1_hp_pctg)))/6 - (sum(p2_hp_pctg.values()) + 1*(6-len(p2_hp_pctg)))/6
+    features["health_difference"] = p1_remain_health_avg - p2_remain_health_avg
+    features["health_advantage_difference"]= counter1 - counter2
+    hp_advantage_streak = sum(p1 > p2 for p1, p2 in zip(p1_hp_pctg, p2_hp_pctg))
+    features["p1_hp_advantage_final_ratio"] = hp_advantage_streak 
+    features["remaining_advantage"] = (p1_remain_health_avg * (1-features["p1_fnt_count"]) - p2_remain_health_avg * (1-features["p2_fnt_count"]))
     return features
 
 
@@ -358,6 +470,7 @@ def create_features(data: list[dict]) -> pd.DataFrame:
         if len(timeline) > 0:
             #"""
             features.update(battle_features(timeline))
+            features.update(kinetic_threat_features(timeline, p1_team, p2_lead))
 
         feature_list.append(features)
         
